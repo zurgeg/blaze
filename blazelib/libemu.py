@@ -2,7 +2,7 @@ import importlib.util
 from binascii import hexlify
 import re, json
 def read_and_exec(file, offset, console):
-    with file as open(file):
+    with f as open(file):
         spec = importlib.util.spec_from_file_location("console", console[0])
         console_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(console_module)
