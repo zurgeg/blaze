@@ -16,7 +16,9 @@ else:
         print(f'[CLI] [FATAL] Console folder doesn\'t exist! Are you sure it\'s in {blazelib.core.BASE_DIR}?')
         exit(1)
       else:
-        print('not done with the CLI yet...')
+        console = blazelib.core.load_console(folder=blazelib.core.BASE_DIR + sys.argv[2], name="BlazeLib CLI Virtual Console")
+        blazelib.libemu.exec_rom(sys.argv[1], 2, console)
+        exit(0)
     
     
     
