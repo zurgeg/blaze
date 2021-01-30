@@ -22,7 +22,9 @@ def read_and_exec(file, offset, console):
         # yeeeeeah, probably should've done that beforehand somehow
         spec = json.load(console[1])
         for i in spec['patterns']:
-            raise NotImplementedError
+            statement = re.compile(list(i.keys())[0])
+            if statement.match(data):
+                console_module.__getattr__(list(i.values()[0]))() # note: this line is spaghetti, please fix thx
         
         
         
