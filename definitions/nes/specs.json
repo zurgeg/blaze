@@ -1,6 +1,8 @@
 {
     "import":"console.py",
     "patterns":[
-        "0000":"break"
+        "0000":"notbreak",
+        "0001*":"ora",
+        "0002":"stp"
     ]
 }
