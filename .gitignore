@@ -1,3 +1,7 @@
 blaze_data
 *.rom
 __pycache__
+*.nes
+*.exe
+*.dll
+cli.build
