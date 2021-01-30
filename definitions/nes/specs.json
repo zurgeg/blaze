@@ -1,6 +1,6 @@
 {
     "import":"console.py",
     "patterns":[
-        "0000*":"break"
+        "0000":"break"
     ]
 }
