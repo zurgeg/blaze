@@ -21,7 +21,7 @@ def read_and_exec(file, offset, n_bytes, console):
         for i in spec['patterns']:
             statement = re.compile(list(i.keys())[0])
             if statement.match(data):
-                console_module.__getattr__(list(i.values()[0]))() # note: this line is spaghetti, please fix thx
+                getattr(list(i.values()[0]))() # note: this line is spaghetti, please fix thx
 def exec_rom(file, bytes_per_instruction, console):
     with open(file, 'rb') as file:
         spec = importlib.util.spec_from_file_location("console", f"{console[3]}/{console[0]}")
@@ -42,7 +42,7 @@ def exec_rom(file, bytes_per_instruction, console):
             for i in spec['patterns']:
                 statement = re.compile(list(i.keys())[0])
                 if statement.match(data):
-                    console_module.__getattr__(list(i.values()[0]))() # note: this line is spaghetti, please fix thx
+                    getattr(list(i.values()[0]))() # note: this line is spaghetti, please fix thx
             data = file.read(bytes_per_instruction)
 
     
