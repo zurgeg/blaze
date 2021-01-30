@@ -16,7 +16,7 @@ elif "darwin" in sys.platform:
 elif "win" in sys.platform:
     print("[CORE] [INFO] Detected Environ as NT")
     nt = True
-    BASE_DIR = os.path.join(os.environ.get("AppData") + "/Blaze/")
+    BASE_DIR = os.path.join(os.environ.get("AppData") + "\\Blaze\\")
 else:
     print("[CORE] [WARNING] Environ is unknown, falling back to GNU/Linux")
     linux = True
