@@ -2,8 +2,8 @@ import importlib.util
 from binascii import hexlify
 import re, json
 def read_and_exec(file, offset, console):
-    with file as open(file):
-        spec = importlib.util.spec_from_file_location("console", console[0])
+    with open(file) as file:
+        spec = importlib.util.spec_from_file_location("console", f"{console[3]}")
         console_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(console_module)
         # Now we are done that, and we can read 4 bytes
