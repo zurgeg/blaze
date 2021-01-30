@@ -1,5 +1,6 @@
 # blaze
 [Chat with us on Discord](https://discord.gg/gWx4cm92Es)
+
 Blaze is a multi-system "emulator". PLEASE READ THIS.
 
 ## Setup
