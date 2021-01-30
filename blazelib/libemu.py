@@ -17,7 +17,7 @@ def read_and_exec(file, offset, n_bytes, console):
         # just kidding i hate regex
         # I just realized we now have to compile every statement in the spec file! *super mario 64 slide music plays*
         # yeeeeeah, probably should've done that beforehand somehow
-        spec = json.load(console[1])
+        spec = console[1]
         for i in spec['patterns']:
             statement = re.compile(list(i.keys())[0])
             if statement.match(data):
@@ -38,7 +38,7 @@ def exec_rom(file, bytes_per_instruction, console):
             # just kidding i hate regex
             # I just realized we now have to compile every statement in the spec file! *super mario 64 slide music plays*
             # yeeeeeah, probably should've done that beforehand somehow
-            spec = json.load(console[1])
+            spec = console[1]
             for i in spec['patterns']:
                 statement = re.compile(list(i.keys())[0])
                 if statement.match(data):
