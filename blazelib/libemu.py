@@ -1,6 +1,9 @@
 import importlib.util
 from binascii import hexlify
 import re, json
+instruction_cache = {} # This caches instructions
+# Format: {offset: function}
+# TODO: Make exec_rom take advantage of this
 def read_and_exec(file, offset, n_bytes, console):
     with open(file, 'rb') as file:
         spec = importlib.util.spec_from_file_location("console", f"{console[3]}/{console[0]}")
@@ -41,8 +44,10 @@ def exec_rom(file, bytes_per_instruction, console):
             spec = console[1]
             for i in spec['patterns']:
                 statement = re.compile(list(i.keys())[0])
+                number_of_arguments = i['args']
                 if statement.match(data):
-                    getattr(console_module, list(i.values())[0])() # note: this line is spaghetti, please fix thx
+                    arguments = hexlify(file.read(number_of_arguments))
+                    getattr(console_module, list(i.values())[0])(arguments) # note: this line is spaghetti, please fix thx
             data = file.read(bytes_per_instruction)
 
     
