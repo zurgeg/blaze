@@ -1,9 +1,9 @@
 class STPException():
     ...
-def notbreak():
+def notbreak(_):
     print('break!')
-def ora():
+def ora(_):
     print('ORA instruction')
-def stp():
+def stp(_):
     print('STP instruction. Stop maybe?')
     raise STPException('Encountered a stop instruction, halt')
