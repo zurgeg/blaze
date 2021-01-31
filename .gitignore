@@ -5,3 +5,10 @@ __pycache__
 *.exe
 *.dll
 cli.build
+*.pyc
+__pycache__
+*.zip
+*.dist
+*.build
+cli_notportable.py
+*.pyc
