@@ -3,6 +3,10 @@
     "patterns":[
         {"0000":"notbreak", "args":0},
         {"0001":"ora", "args":0},
-        {"0002":"stp", "args":0}
+        {"0002":"stp", "args":0},
+        {"400c":"jump_to", "args":2},
+        {"600c":"jump_to", "args":2},
+        {"2005":"notand", "args":2},
+        {"000e":"asl", "args":2}
     ]
 }
