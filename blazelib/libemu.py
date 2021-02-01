@@ -12,13 +12,13 @@ def cache_regex(*args, **kwargs):
     raise NotImplementedError()
 def read_and_exec(file, offset, n_bytes, console):
     global base
-    base += offset
+    base = offset
     with open(file, 'rb') as file:
         spec = importlib.util.spec_from_file_location("console", f"{console[3]}/{console[0]}")
         console_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(console_module)
         # Now we are done that, and we can read 4 bytes
-        file.seek(offset - 1)
+        file.seek(offset)
         data = file.read(n_bytes)
         data = str(hexlify(data))[2:-1]
         # All done loading data! Now we can call upon our "trusty" partner... RegEx!
@@ -44,7 +44,7 @@ def exec_rom(file, bytes_per_instruction, console):
         console_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(console_module)
         # Now we are done that, and we can read 4 bytes
-        data = file.read(base + bytes_per_instruction)
+        data = file.read(bytes_per_instruction)
         current_addr = bytes_per_instruction
         while data:
             data = str(hexlify(data))[2:-1]
@@ -65,8 +65,8 @@ def exec_rom(file, bytes_per_instruction, console):
                         getattr(console_module, list(i.values())[0])(arguments, **spec['kwargs']) # note: this line is spaghetti, please fix thx
                     else:
                         getattr(console_module, list(i.values())[0])(arguments) # 
-            data = file.read(base + bytes_per_instruction)
-            current_addr = base + current_addr + bytes_per_instruction
+            data = file.read(bytes_per_instruction)
+            current_addr = current_addr + bytes_per_instruction
 
     
         
