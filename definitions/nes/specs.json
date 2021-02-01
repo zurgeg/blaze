@@ -7,6 +7,18 @@
         {"400c":"jump_to", "args":2},
         {"600c":"jump_to", "args":2},
         {"2005":"notand", "args":2},
-        {"000e":"asl", "args":2}
+        {"000e":"asl", "args":2},
+        {"c00a":"dex", "args":0},
+        {"e008":"inx", "args":0},
+        {"c008":"iny", "args":0},
+        {"8010": "bcc", "args":1},
+        {"a010": "bcs", "args":1},
+        {"e010": "beq", "args":1},
+        {"c010": "bne", "args":1},
+        {"6010": "bvs", "args":1},
+        {"4010": "bvc", "args":1},
+        {"2010": "bmi", "args":1},
+        {"0010": "bpl", "args":1}
+        
     ]
 }
