@@ -60,9 +60,16 @@ def exec_rom(file, bytes_per_instruction, console):
                 statement = re.compile(list(i.keys())[0])
                 number_of_arguments = i['args']
                 if statement.match(data):
-                    arguments = hexlify(file.read(number_of_arguments))
+                    if 'argument_handler' in list(spec.keys()):
+                        if 'arg_handler_kwargs' in list(i.keys()):
+                            arguments = getattr(console_module, spec['argument_handler'])(hexlify(file.read(number_of_arguments)), **i['arg_handler_kwargs'])
+                        else:
+                            arguments = getattr(console_module, spec['argument_handler'])(hexlify(file.read(number_of_arguments)))
+                    else:
+                        arguments = hexlify(file.read(number_of_arguments))
+                            
                     if "kwargs" in list(i.keys()):   
-                        getattr(console_module, list(i.values())[0])(arguments, **spec['kwargs']) # note: this line is spaghetti, please fix thx
+                        getattr(console_module, list(i.values())[0])(arguments, **i['kwargs']) # note: this line is spaghetti, please fix thx
                     else:
                         getattr(console_module, list(i.values())[0])(arguments) # 
             data = file.read(bytes_per_instruction)

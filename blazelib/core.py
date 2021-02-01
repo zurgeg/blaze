@@ -5,6 +5,7 @@ linux = False
 darwin = False
 nt = False
 portable = True
+directory_override = 'definitions/'
 if "linux" in sys.platform:
     print("[CORE] [INFO] Detected Environ as GNU/Linux")
     linux = True
@@ -23,6 +24,8 @@ else:
     BASE_DIR = "~/.blaze/"
 if portable:
     BASE_DIR = "blaze_data/"
+if directory_override:
+    BASE_DIR = directory_override
 print(f"[CORE] [INFO] Data will be stored at {BASE_DIR}")
 if not os.path.exists(BASE_DIR):
     os.mkdir(BASE_DIR)
