@@ -8,6 +8,8 @@ current_rom = ''
 current_console = []
 current_addr = None
 base = 0x0
+def cache_regex(*args, **kwargs):
+    raise NotImplementedError()
 def read_and_exec(file, offset, n_bytes, console):
     global base
     base += offset

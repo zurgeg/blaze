@@ -17,7 +17,11 @@ else:
         exit(1)
       else:
         console = blazelib.core.load_console(folder=blazelib.core.BASE_DIR + sys.argv[2], name="BlazeLib CLI Virtual Console")
-        blazelib.libemu.exec_rom(sys.argv[1], 2, console)
+        try:
+            blazelib.libemu.exec_rom(sys.argv[1], 2, console)
+        except Exception as e:
+            print(f'[CLI] [FATAL] Emulator crashed: {e}')
+            exit(2)
         exit(0)
     
     
