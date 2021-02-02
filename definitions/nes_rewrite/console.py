@@ -44,25 +44,83 @@ def arg_handler(*args, mode=ABSOLUTE):
         else:
             return PC + 2 + offset - 0x100
     elif mode == ZERO_PAGE:
-        return cpu.ram.read_8(PC + 1)
+        print(PC + 1)
+        ram_read = cpu.ram.read_8(PC + 1)
+        if ram_read == None:
+            return 0
+        else:
+            return ram_read
     elif mode == ZERO_PAGE_X:
-        return cpu.ram.read_8(PC + 1) + X
+        try:
+            return cpu.ram.read_8(PC + 1) + X
+        except TypeError:
+            print(f'TypeError at PC {PC}.')
+            return X
     elif mode == ZERO_PAGE_Y:
         return cpu.ram.read_8(PC + 1) + Y
     else:
         print(f'[NES REWRITTEN] Unknown Mode {mode}!')
         
 class RAM:
-    def __init__(self):
-        self.ram = [0] * 65535
+    def __init__(self, cpu):
+        self.ram = [0] * 0x2000
+        self.ppu_registers = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.cpu = cpu
     def read_8(self, offset):
-        return self.ram[offset]
+        try:
+            if offset < 0x2000:
+                print(f'CPU Read {offset}')
+                if self.ram[offset] == None:
+                    return 0
+                return self.ram[offset]
+            elif offset < 0x4000:
+                print(f'PPU Read {offset%8}')
+                return self.ppu_registers[offset%8]
+            elif offset == 0x4014:
+                print(f'PPU Read 8')
+                return self.ppu_registers[8]
+            elif offset < 0x6000:
+                print(f'I/O Read {offset}')
+                return 0 # I/O Write
+        except IndexError:
+            print(f'[NES REWRITTEN] Invalid read from {offset}')
+            return 0
     def read_16(self, offset):
-        return self.ram[offset] + self.ram[offset+1]
+        lo = self.read_8(offset)
+        hi = self.read_8(offset + 1)
+        if lo == None:
+            lo = 0
+        if hi == None:
+            hi = 0
+        return hi << 8 | lo
     def write_8(self, offset, data):
-        self.ram[offset] = data
+        if data == None:
+            return
+        try:
+            if offset < 0x2000:
+                # Write to Console RAM
+                print('CPU RAM')
+                self.ram[offset % 0x0800] = data
+            elif offset < 0x4000:
+                print('PPU RAM')
+                self.ppu_register[0x2000 + offset%8] = data
+            elif offset == 0x4014:
+                print('PPU RAM')
+                self.ppu_register[8] = data
+                
+            elif offset < 0x6000:
+                print('I/O RAM')
+                return 0
+                
+        except IndexError:
+            print(f'[NES REWRITTEN] Invalid write to {offset}')
     def write_16(self, offset, data):
-        self.ram[offset:offset+1] = data
+        if data == None:
+            return
+        try:
+            self.ram[offset:offset+1] = data
+        except IndexError:
+            print(f'[NES REWRITTEN] Invalid 16-bit write to {offset}')
     def ramdump(self):
         # please no
         return self.ram
@@ -70,7 +128,7 @@ class RAM:
         self.ram = [0] * 65535
 class CPU:
     def __init__(self):
-        self.ram = RAM()
+        self.ram = RAM(self)
         self.ppu = PPU()
         self.bridge = Bridge(self, self.ppu) # The bridge allows the CPU to communicate with the PPU
         self.cycles = 0
@@ -88,7 +146,7 @@ class CPU:
         self.n = 0
         self.pages_cross = False
         self.interrupt = None
-        self.stall = 10
+        self.stall = 100
         self.cycles = 0
     def set_register(self, register, value):
         setattr(self, register, value)
@@ -298,22 +356,10 @@ class Bridge:
         data = self.cpu.ram.read_8(0x2007)
         oamdma = self.cpu.ram.read_8(0x4014)
         print([control, mask, status, oamaddr, oamdata, scroll, address, data, oamdma])
-        control = self.cpu.ram.read_8(0x3450)
-        mask = self.cpu.ram.read_8(0x3451)
-        status = self.cpu.ram.read_8(0x3452)
-        oamaddr = self.cpu.ram.read_8(0x3453)
-        oamdata = self.cpu.ram.read_8(0x3454)
-        scroll = self.cpu.ram.read_8(0x3455)
-        address = self.cpu.ram.read_8(0x3456)
-        data = self.cpu.ram.read_8(0x3457)
-        oamdma = self.cpu.ram.read_8(0x4014)
-        print([control, mask, status, oamaddr, oamdata, scroll, address, data, oamdma])
         if [control, mask, status, oamaddr, oamdata, scroll, address, data, oamdma] == [0]*9:
             # Display wasn't updated, do nothing
             pass
         else:
-           print('PPU ACTIVE!!!! POGGERS!!!!')
-           exit(0)
            self.cpu_memcache = [control, mask, status, oamaddr, oamdata, scroll, address, data, oamdma]
            ppu_addr = 0x2000
            for i in self.cpu_memcache:
@@ -339,7 +385,7 @@ def stp(*args):
     #raise STPException('Halt.')
 def jump_to(address):
     #print(f'Jumping to {address}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
 def adc(address):
     #print('ADC')
     cpu.cycle()
@@ -373,15 +419,15 @@ def asl(address):
     cpu.set_register('n', value)
 def bcc(address):
     if cpu.get_register('c') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bcs(address):
     if cpu.get_register('c') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def beq(address):
     if cpu.get_register('z') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)       
 def bit(address):
     value = cpu.ram.read_8(address)
@@ -393,23 +439,23 @@ def bit(address):
     cpu.set_register('n', value)
 def bmi(address):
     if cpu.get_register('n') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bne(address):
     if cpu.get_register('z') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bpl(address):
     if cpu.get_register('n') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bvc(address):
     if cpu.get_register('v') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bvs(address):
     if cpu.get_register('v') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 4, blazelib.libemu.current_console)
+        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def inx(_):
     cpu.set_register('x', cpu.get_register('x') + 1)
@@ -429,9 +475,7 @@ def dey(_):
     cpu.set_register('n', cpu.get_register('x'))
 
 def inc(address):
-    address = address
-    if address == 0x2002:
-        exit(9)
+    print(address)
     value = cpu.ram.read_8(address)
     cpu.ram.write_8(address, value + 1)
 def ldy(address):

@@ -1,6 +1,7 @@
 {
     "import":"console.py",
     "argument_handler":"arg_handler",
+    "on_read_and_exec":"set_pc",
     "patterns":[
         {"0000":"notbreak", "args":0},
         {"0001":"ora", "args":0},

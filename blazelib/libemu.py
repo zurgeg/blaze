@@ -45,7 +45,7 @@ def exec_rom(file, bytes_per_instruction, console):
         spec.loader.exec_module(console_module)
         # Now we are done that, and we can read 4 bytes
         data = file.read(bytes_per_instruction)
-        current_addr = bytes_per_instruction
+        current_addr = 0
         while data:
             data = str(hexlify(data))[2:-1]
             # All done loading data! Now we can call upon our "trusty" partner... RegEx!
@@ -73,7 +73,8 @@ def exec_rom(file, bytes_per_instruction, console):
                     else:
                         getattr(console_module, list(i.values())[0])(arguments) # 
             data = file.read(bytes_per_instruction)
-            current_addr = current_addr + bytes_per_instruction
+            current_addr += bytes_per_instruction
+            #print(current_addr)
 
     
         
