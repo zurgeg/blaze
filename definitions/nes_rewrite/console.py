@@ -1,5 +1,8 @@
 import blazelib.libemu
 from time import sleep
+from binascii import hexlify
+import pickle
+import os.path
 ABSOLUTE = 0
 ABSOLUTE_X = 1
 ABSOLUTE_Y = 2
@@ -12,6 +15,117 @@ RELATIVE = 8
 ZERO_PAGE = 9
 ZERO_PAGE_X = 10
 ZERO_PAGE_Y = 11
+blazelib.libemu.base = 0x2000
+class Mapper1:
+    def __init__(self, rom):
+        self.shift_register = 0x10
+        self.prg_offsets = [0] * 0x4000
+        self.chr_offsets = [0] * 0x4000
+        self.control = 0
+        self.chr_mode = 0
+        self.prg_mode = 0
+        self.cartridge = rom
+        self.chr_bank_0 = 0
+        self.chr_bank_1 = 0
+        self.prg_bank = 0
+        self.PRG = self.cartridge.PRG
+        self.CHR = self.cartridge.CHR
+        self.SRAM = self.cartridge.SRAM
+        self.prg_offsets[1] = self.prg_bank_offset(-1) 
+    def prg_bank_offset(self, index):
+        if index >= 0x80:
+            index -= 0x100
+        index %= len(self.PRG) / 0x4000
+        offset = index * 0x4000
+        if offset < 0:
+            offset += len(self.PRG)
+        return offset
+    def write(self, address, value):
+        if address < 0x2000:
+            bank = address / 0x1000
+            offset = address % 0x1000
+            self.cartridge.CHR[self.chr_offsets[bank]+offset] = value
+        elif address >= 0x8000:
+            self.load_register(address, value)
+        elif address >= 0x6000:
+            self.cartridge.SRAM[address-0x6000] = value
+    def read(self, address):
+        if address < 0x2000:
+            bank = address / 0x1000
+            offset = address % 0x1000
+            return self.cartridge.CHR[self.chr_offsets[bank]+offset]
+        elif address >= 0x8000:
+            address = address - 0x8000
+            bank = address / 0x4000
+            offset = address % 0x4000
+            return self.cartridge.PRG[self.prg_offset[bank] + offset]
+        elif address >= 0x6000:
+            return self.cartridge.SRAM[address-0x6000]
+        
+    def load_register(self, address, value):
+        if value&0x80 == 0x80:
+            self.shift_register = 0x10
+            self.write_control(self.control | 0x0c)
+        else:
+            complete = self.shift_register & 1 == 1
+            self.shift_register >>= 1
+            self.shift_register |= (value & 1) << 7
+            if complete:
+                self.write_register(address, self.shift_register)
+                self.shift_register = 0x10
+    def write_register(self, address, value):
+        if address <= 0x9FFF:
+            self.write_control(value)
+        elif address <= 0xBFFF:
+            self.write_chr_bank_0(value)
+        elif address <= 0xDFFF:
+            self.write_chr_bank_1(value)
+        elif address <= 0xFFFF:
+            self.write_prg_bank(value)
+    def write_control(self, value):
+        self.control = value
+        self.chr_mode = (value >> 4) & 1
+        self.prg_mode = (value >> 2) & 3
+        mirror = value & 3
+        self.update_offsets()
+    def write_chr_bank_0(self,value):
+        self.chr_bank_0 = value
+        self.update_offsets()
+    def write_chr_bank_1(self, value):
+        self.chr_bank_1 = value
+        self.update_offsets()
+    def write_prg_bank(self, value):
+        self.prg_bank = value & 0x0F
+        self.update_offsets()
+    def chr_bank_offset(self, index):
+        if index >= 0x80:
+            index -= 0x100
+        index %= len(self.CHR) / 0x1000
+        offset = index * 0x1000
+        if offset < 0:
+            offset += len(self.CHR)
+        return offset
+    def update_offsets(self):
+        if self.prg_mode == 0 or self.prg_mode == 1:
+            self.prg_offsets[0] = self.prg_bank_offset(int(self.prg_bank & 0xFE))
+            self.prg_offsets[1] = self.prg_bank_offset(int(self.prg_bank | 0x01))
+        elif self.prg_mode == 2:
+            self.prg_offsets[0] = 0
+            self.prg_offsets[1] = self.prg_bank_offset(int(self.prg_bank))
+        elif self.prg_mode == 3:
+            self.prg_offsets[0] = self.prg_bank_offset(int(self.prg_bank))
+            self.prg_offsets[1] = self.prg_bank_offset(-1)
+        if self.chr_mode == 0:
+            self.chr_offsets[0] = self.chr_bank_offset(int(self.chr_bank_0 & 0xFE))
+            self.chr_offsets[1] = self.chr_bank_offset(int(self.chr_bank_1 | 0x01))
+        elif self.chr_mode == 1:
+            self.chr_offsets[0] = self.chr_bank_offset(self.chr_bank_0)
+            self.chr_offsets[1] = self.chr_bank_offset(self.chr_bank_1)
+        
+        
+        
+        
+        
 def pages_differ(a, b):
     return a&0xFF00 != b&0xFF00
 def arg_handler(*args, mode=ABSOLUTE):
@@ -19,6 +133,7 @@ def arg_handler(*args, mode=ABSOLUTE):
     X = cpu.get_register('x')
     Y = cpu.get_register('y')
     if mode == ABSOLUTE:
+        print(PC)
         return cpu.ram.read_16(blazelib.libemu.current_addr + 1)
     elif mode == ABSOLUTE_X:
         cpu.pages_cross = pages_differ(blazelib.libemu.current_addr - cpu.get_register('x'), blazelib.libemu.current_addr)
@@ -33,7 +148,7 @@ def arg_handler(*args, mode=ABSOLUTE):
     elif mode == IMPLIED:
         return 0
     elif mode == INDEXED_INDIRECT:
-        return cpu.ram.read_16(cpu.read(PC + 1) + X)
+        return cpu.ram.read_16(cpu.rom.read_8(PC + 1) + X)
     elif mode == INDIRECT:
         cpu.pages_cross = pages_differ(PC - Y, PC)
         return cpu.ram.read_16(PC + 1)
@@ -58,9 +173,39 @@ def arg_handler(*args, mode=ABSOLUTE):
             return X
     elif mode == ZERO_PAGE_Y:
         return cpu.ram.read_8(PC + 1) + Y
+    elif mode == INES:
+        return args[0]
     else:
         print(f'[NES REWRITTEN] Unknown Mode {mode}!')
+class ROM:
+    def __init__(self):
+        self.file = open(blazelib.libemu.current_rom, mode='rb')
+        if not os.path.exists(blazelib.libemu.current_rom + '.blazesave'):
+            self.save = open(blazelib.libemu.current_rom + '.blazesave', mode='wb')
+            self.save.close()
+        self.save = open(blazelib.libemu.current_rom + '.blazesave', mode='r+b')
+        self.PRG = [0] * 0x4000
+        self.CHR = [0] * 0x4000
+        self.SRAM = []
+        self.mapper_class = Mapper1(self)
+        self.mapper = 1
+        self.mirror = 1
+        self.battery = False
+        if self.save.read() == b'':
+            self.SRAM = [0] * 0x2000
+        else:
+            self.SRAM = pickle.load(self.save)
         
+    def read_8(self,offset):
+        return self.mapper_class.read(offset)
+    def read_16(self,offset):
+        lo = self.read_8(offset)
+        hi = self.read_8(offset + 1)
+        if lo == None:
+            lo = 0
+        if hi == None:
+            hi = 0
+        return hi << 8 | lo
 class RAM:
     def __init__(self, cpu):
         self.ram = [0] * 0x2000
@@ -69,19 +214,23 @@ class RAM:
     def read_8(self, offset):
         try:
             if offset < 0x2000:
-                print(f'CPU Read {offset}')
+                #print(f'CPU Read {offset}')
                 if self.ram[offset] == None:
                     return 0
                 return self.ram[offset]
             elif offset < 0x4000:
-                print(f'PPU Read {offset%8}')
+                #print(f'PPU Read {offset%8}')
                 return self.ppu_registers[offset%8]
             elif offset == 0x4014:
-                print(f'PPU Read 8')
+                #print(f'PPU Read 8')
                 return self.ppu_registers[8]
             elif offset < 0x6000:
-                print(f'I/O Read {offset}')
+                #print(f'I/O Read {offset}')
                 return 0 # I/O Write
+            elif offset >= 0x6000:
+                return self.cpu.rom.read_8(offset)
+            print('I got nothin')
+            return 0
         except IndexError:
             print(f'[NES REWRITTEN] Invalid read from {offset}')
             return 0
@@ -99,17 +248,17 @@ class RAM:
         try:
             if offset < 0x2000:
                 # Write to Console RAM
-                print('CPU RAM')
+                #print('CPU RAM')
                 self.ram[offset % 0x0800] = data
             elif offset < 0x4000:
-                print('PPU RAM')
+                #print('PPU RAM')
                 self.ppu_register[0x2000 + offset%8] = data
             elif offset == 0x4014:
-                print('PPU RAM')
+                #print('PPU RAM')
                 self.ppu_register[8] = data
                 
             elif offset < 0x6000:
-                print('I/O RAM')
+                #print('I/O RAM')
                 return 0
                 
         except IndexError:
@@ -126,10 +275,16 @@ class RAM:
         return self.ram
     def clear_ram(self):
         self.ram = [0] * 65535
+
+class INESInfo:
+    def __init__(self,prg_rom_size):
+        self.prg_rom_size = prg_rom_size
 class CPU:
     def __init__(self):
         self.ram = RAM(self)
+        self.rom = ROM()
         self.ppu = PPU()
+        self.ines = INESInfo(None)
         self.bridge = Bridge(self, self.ppu) # The bridge allows the CPU to communicate with the PPU
         self.cycles = 0
         self.sp = 0xFD
@@ -155,6 +310,7 @@ class CPU:
     def reset(self):
         self.__init__()
     def cycle(self):
+        blazelib.libemu.base = 0
         sleep(0.001*self.stall)# We can only cycle every self.stall * 0.001 seconds
         self.cycles += 1
         self.bridge.cycle()
@@ -259,7 +415,7 @@ class PPU:
             return self.read_oam_data()
         elif address == 0x2007:
             return self.read_data()
-        return 0
+            return 0
     def write_register(self, address, value):
         self.register = value
         if address == 0x2000:
@@ -360,6 +516,8 @@ class Bridge:
             # Display wasn't updated, do nothing
             pass
         else:
+           print('PPU Write')
+           exit(0)
            self.cpu_memcache = [control, mask, status, oamaddr, oamdata, scroll, address, data, oamdma]
            ppu_addr = 0x2000
            for i in self.cpu_memcache:
@@ -369,13 +527,15 @@ class Bridge:
                    ppu_addr = 0x4014
                self.ppu.write_register(ppu_addr, i)        
 cpu = CPU()
+def ines(args):
+    cpu.ines.prg
 def notbreak(*args):
     cpu.cycle()
     cpu.push_16(blazelib.libemu.current_addr)
     cpu.push(cpu.flags() | 0x10)
     cpu.set_register('i', 1)
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, 0xFFEE, 4, blazelib.libemu.current_console)
-    #print('break!'))
+    #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, 0xFFEE, 4, blazelib.libemu.current_console)
+    print('break!')
 def ora(*args):
     cpu.cycle()
     #print('ORA instruction')
@@ -384,10 +544,10 @@ def stp(*args):
     #print('STP instruction. Stop maybe?')
     #raise STPException('Halt.')
 def jump_to(address):
-    #print(f'Jumping to {address}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+    print(f'Jumping to {address}')
+    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
 def adc(address):
-    #print('ADC')
+    print(f'ADC Instruction {address}')
     cpu.cycle()
     a = cpu.get_register('a')
     b = cpu.ram.read_8(address)
@@ -404,81 +564,97 @@ def adc(address):
     else:
         cpu.set_register('v', 0)
 def notand(address):
+    print(f'AND Instruction {address}')
     cpu.cycle()
     cpu.set_register('x', cpu.ram.read_8(address))
     cpu.set_register('a', cpu.get_register('a') & cpu.ram.read_8(address))
     cpu.set_register('z', cpu.get_register('a'))
     cpu.set_register('n', cpu.get_register('a'))
 def asl(address):
+    print(f'ASL Instruction {address}')
     cpu.cycle()
     value = cpu.ram.read_8(address)
+    if not value:
+        value = 0
     cpu.set_register('c', (value >> 7) & 1)
     value <<= 1
     cpu.ram.write_8(address, value)
     cpu.set_register('z', value)
     cpu.set_register('n', value)
 def bcc(address):
+    print(f'BCC Instruction {address}')
     if cpu.get_register('c') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bcs(address):
+    print(f'BCS Instruction {address}')
     if cpu.get_register('c') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def beq(address):
+    print(f'BEQ Instruction {address}')
     if cpu.get_register('z') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)       
 def bit(address):
     value = cpu.ram.read_8(address)
-    if address == int(b'0x2002', base=0):
-        # just for fun, let's make the VBL flag active at reset time
-        value = 1
     cpu.set_register('v', (value >> 6) & 1)
     cpu.set_register('z', value & cpu.get_register('a'))
     cpu.set_register('n', value)
 def bmi(address):
+    print(f'BMI Instruction {address}')
     if cpu.get_register('n') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bne(address):
+    print(f'BNE Instruction {address}')
     if cpu.get_register('z') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bpl(address):
+    print(f'BPL Instruction {address}')
     if cpu.get_register('n') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bvc(address):
+    print(f'BVC Instruction {address}')
     if cpu.get_register('v') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bvs(address):
+    print(f'BVS Instruction {address}')
     if cpu.get_register('v') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 2, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def inx(_):
+    print('INX Instruction')
     cpu.set_register('x', cpu.get_register('x') + 1)
     cpu.set_register('z', cpu.get_register('x'))
     cpu.set_register('n', cpu.get_register('x'))
 def dex(_):
+    print('DEX Instruction')
     cpu.set_register('x', cpu.get_register('x') - 1)
     cpu.set_register('z', cpu.get_register('x'))
     cpu.set_register('n', cpu.get_register('x'))
 def iny(_):
+    print('INY Instruction')
     cpu.set_register('y', cpu.get_register('y') + 1)
     cpu.set_register('z', cpu.get_register('y'))
     cpu.set_register('n', cpu.get_register('y'))
 def dey(_):
+    print('DEY Instruction')
     cpu.set_register('x', cpu.get_register('y') - 1)
     cpu.set_register('z', cpu.get_register('x'))
     cpu.set_register('n', cpu.get_register('x'))
 
 def inc(address):
-    print(address)
+    print(f'INC Instruction: {address}')
     value = cpu.ram.read_8(address)
+    if not value:
+        value = 0
     cpu.ram.write_8(address, value + 1)
 def ldy(address):
+    print(f'LDY Instruction: {address}')
     address = address
     register = cpu.get_register('a')
     cpu.ram.write_8(address, register)
