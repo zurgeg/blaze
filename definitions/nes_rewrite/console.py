@@ -3,6 +3,7 @@ from time import sleep
 from binascii import hexlify
 import pickle
 import os.path
+from PIL import Image
 ABSOLUTE = 0
 ABSOLUTE_X = 1
 ABSOLUTE_Y = 2
@@ -356,10 +357,9 @@ class CPU:
     def __init__(self):
         self.ram = RAM(self)
         self.rom = ROM()
-        self.ppu = PPU()
         self.exec_next_byte = True
         self.ines = INESInfo(None)
-        self.bridge = Bridge(self, self.ppu) # The bridge allows the CPU to communicate with the PPU
+        self.bridge = Bridge(self) # The bridge allows the CPU to communicate with the PPU
         self.cycles = 0
         self.sp = 0xFD
         self.a = 0
@@ -424,7 +424,9 @@ class CPU:
             cpu.cycle()
         
 class PPU:
-    def __init__(self):
+    def __init__(self, bridge):
+        self.bridge = bridge
+        self.ram = [0] * 0x2000
         self.cycle = 0
         self.scanline = 0
         self.frame = 0
@@ -473,9 +475,12 @@ class PPU:
         self.flag_sprite_overflow = 0
 
         self.oam_address = 0
-        self.oam_data = []
+        self.oam_data = [0] * 0x4000
 
         self.buffered_data = 0
+
+        self.front = Image.new()
+        self.back = Image.new()
     def read_palette(self, address):
         if address >= 16 and address%4 == 0:
             address -= 16
@@ -543,10 +548,39 @@ class PPU:
         self.oam_address = value
     def read_oam_data(self):
         return self.oam_data[self.oam_address]
-    def write_oam_data(self):
+    def write_oam_data(self, value):
         self.oam_data[self.oam_address] = value
         self.oam_address += 1
-    # etc., etc., etc.,
+    def write_scroll(self, value):
+        if self.w == 0:
+            self.t = (self.t & 0x80FF) | (value >> 3)
+            self.x = value & 0x07
+            self.w = 1
+        else:
+            self.t = (self.t & 0x8FFF) | (value & 0x07)
+            self.t = (self.t & 0xFC14) | ((value & 0xF8) << 2)
+            self.w = 0
+    def write_address(self, value):
+        if self.w == 0:
+            self.t = (self.t & 0x80FF) | (value << 8)
+            self.w = 1
+        else:
+            self.t = (self.t & 0xFF00) | value
+            self.v = self.t
+            self.w = 0
+    def write_data(self, value):
+        self.ram[self.v] = value
+        if self.flag_increment == 0:
+            self.v += 1
+        else:
+            self.v += 32
+    def write_dma(self, value):
+        cpu = self.bridge.cpu
+        address = value << 8
+        for i in range(256):
+            self.oam_data[self.oam_address] = cpu.ram.read_8(address)
+            self.oam_address += 1
+            address += 1
     def increment_x(self):
         if self.v&0x001F == 31:
             self.v &= 0xFFE0
@@ -571,10 +605,56 @@ class PPU:
         self.v = (self.v & 0xFBE0) | (self.t & 0x041F)
     def copy_y(self):
         self.v = (self.v & 0x841F) | (self.t & 0x7BE0)
+    def nmi_change(self):
+        nmi = self.nmi_output and self.nmi_occured
+        if nmi and not self.nmi_previous:
+            self.nmi_delay = 15
+        self.nmi_previous = nmi
+    def set_vertical_blank(self):
+        self.nmi_occured = False
+        self.nmi_change()
+    def clear_vertical_blank(self):
+        self.nmi_occured = False
+        self.nmi_change()
+    def fetch_name_table_byte(self):
+        v = self.v
+        address = 0x2000 | (v & 0x0FFF)
+        self.name_table_byte = self.ram[address]
+    def fetch_low_tile_byte(self):
+        fine_y = (self.v >> 12) & 7
+        table = self.flag_background_table
+        tile = self.name_table_byte
+        address = 0x1000*table + tile*16 + fine_y
+        self.low_tile_byte = self.ram[address]
+    def fetch_high_tile_byte(self):
+        fine_y = (self.v >> 12) & 7
+        table = self.flag_background_table
+        tile = self.name_table_byte
+        address = 0x1000*table + tile*16 + fine_y
+        self.low_tile_byte = self.ram[address + 8]
+    # NOTE TO SELF: self.back.paste(R,G,B, (left, upper, right, lower)
+    def render_pixel(self):
+        x = self.cycle - 1
+        y = self.scan_line
+        background = self.background_pixel()
+        i, sprite = self.sprite_pixel()
+        if x < 8 and self.flag_show_left_background == 0:
+            background = 0
+        if x < 8 and self.flag_show_left_sprites == 0:
+            sprite = 0
+        b = background%4 != 0
+        s = sprite%4 != 0
+        color = 0
+        if not b and s:
+            color = sprite | 0x10
+        elif b and not s:
+            color = background
+        else:
+            ...
 class Bridge:
-    def __init__(self, cpu, ppu):
+    def __init__(self, cpu):
         self.cpu = cpu
-        self.ppu = ppu
+        self.ppu = PPU(self)
         self.cpu_memcache = [0,0,0,0,0,0,0,0,0] # Caches read data from the CPU to make sure it's changed
     def cycle(self):
         # Grab data from cpu $2000-$2007
