@@ -60,7 +60,9 @@ def exec_rom(file, bytes_per_instruction, console):
         data = 1
         extra_seek = 0
         current_addr = 0
-        file.read(0x10)
+        spec = console[1]
+        if 'header_handler' in list(spec.keys()):
+            file.read(spec['header_size'])
         while data:
             if data == 1:
                 data = file.read(bytes_per_instruction)
@@ -72,7 +74,6 @@ def exec_rom(file, bytes_per_instruction, console):
             # just kidding i hate regex
             # I just realized we now have to compile every statement in the spec file! *super mario 64 slide music plays*
             # yeeeeeah, probably should've done that beforehand somehow
-            spec = console[1]
             for i in spec['patterns']:
                 statement = re.compile(list(i.keys())[0])
                 number_of_arguments = i['args']

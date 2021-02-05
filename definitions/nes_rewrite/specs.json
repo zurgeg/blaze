@@ -1,7 +1,8 @@
 {
     "import":"console.py",
     "argument_handler":"arg_handler",
-    "on_read_and_exec":"set_pc",
+    "header_size":16,
+    "header_handler":"header_handler",
     "patterns":[
         {"00":"notbreak", "args":0},
         {"01":"ora", "args":0},
@@ -22,7 +23,7 @@
         {"30": "bmi", "args":1, "arg_handler_kwargs":{"mode":9}},
         {"10": "bpl", "args":1, "arg_handler_kwargs":{"mode":9}},
         {"e6": "inc", "args":0, "arg_handler_kwargs":{"mode":9}},
-        {"ee": "inc", "args":1},
+        {"ee": "inc", "args":2},
         {"f6": "inc", "args":1, "arg_handler_kwargs":{"mode":10}},
         {"ee": "inc", "args":2, "arg_handler_kwargs":{"mode":1}},
         {"24": "bit", "args":1, "arg_handler_kwargs":{"mode":9}},
