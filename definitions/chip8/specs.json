@@ -1,0 +1,8 @@
+{
+    "import":"console.py",
+    "pass_instruction":true,
+    "patterns":[
+        {"0*":"exec_subroutine", "args":1},
+        {"1*":"jump_to", "args":1}
+    ]
+}

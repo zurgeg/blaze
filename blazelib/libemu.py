@@ -77,6 +77,10 @@ def exec_rom(file, bytes_per_instruction, console):
             for i in spec['patterns']:
                 statement = re.compile(list(i.keys())[0])
                 number_of_arguments = i['args']
+                if 'pass_instruction' in list(spec.keys()):
+                    do_pass_instruction = spec['pass_instruction']
+                else:
+                    do_pass_instruction = False
                 if statement.match(data):
                     print(data)
                     if 'argument_handler' in list(spec.keys()):
@@ -87,10 +91,18 @@ def exec_rom(file, bytes_per_instruction, console):
                     else:
                         arguments = hexlify(file.read(number_of_arguments))
                             
-                    if "kwargs" in list(i.keys()):   
-                        getattr(console_module, list(i.values())[0])(arguments, **i['kwargs']) # note: this line is spaghetti, please fix thx
+                    if "kwargs" in list(i.keys()):
+                        if do_pass_instruction:
+                            getattr(console_module, list(i.values())[0])(arguments, data, **i['kwargs']) # note: this line is spaghetti, please fix thx
+                        else:
+                            getattr(console_module, list(i.values())[0])(arguments, **i['kwargs']) # note: this line is spaghetti, please fix thx
+                            
                     else:
-                        getattr(console_module, list(i.values())[0])(arguments) # 
+                        if do_pass_instruction:
+                            getattr(console_module, list(i.values())[0])(arguments, data) #
+                        else:
+                            getattr(console_module, list(i.values())[0])(arguments)
+                            
             data = file.read(bytes_per_instruction)
             current_addr += bytes_per_instruction
             print(current_addr)
