@@ -2,8 +2,12 @@
     "import":"console.py",
     "pass_instruction":true,
     "patterns":[
-        {"0*":"exec_subroutine", "args":1},
-        {"1*":"jump_to", "args":1},
-        {"6*":"set_register", "args":1}
+        {"0[0-9A-Fa-f]":"exec_subroutine", "args":1},
+        {"1[0-9A-Fa-f]":"jump_to", "args":1},
+        {"6[0-9A-Fa-f]":"set_register", "args":1},
+        {"7[0-9A-Fa-f]":"add_to_register", "args":1},
+        {"d[0-9A-Fa-f]":"draw_chip8", "args":1},
+        {"a[0-9A-Fa-f]":"set_i", "args":1}
+
     ]
 }

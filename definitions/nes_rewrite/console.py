@@ -143,7 +143,9 @@ def arg_handler(arg, mode=ABSOLUTE):
     Y = cpu.get_register('y')
     if arg == b'':
         return 0
-    arg_int = int(b'0x' + arg,base=0)
+    arg = str(arg)[2:-1]
+    arg_reversed = "".join(reversed([arg[i:i+2] for i in range(0, len(arg), 2)]))
+    arg_int = int('0x' + arg_reversed, base=0)
     if mode == ABSOLUTE:
         print(PC)
         return arg_int
@@ -750,19 +752,19 @@ def bcc(address):
     if cpu.exec_next_byte:
         print(f'BCC Instruction {address}')
         if cpu.get_register('c') == 0:
-            blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+            #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
             cpu.branchcycles(address)
 def bcs(address):
     if cpu.exec_next_byte:
         print(f'BCS Instruction {address}')
         if cpu.get_register('c') != 0:
-            blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+            #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
             cpu.branchcycles(address)
 def beq(address):
     if cpu.exec_next_byte:
         print(f'BEQ Instruction {address}')
         if cpu.get_register('z') != 0:
-            blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+            #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
             cpu.branchcycles(address)       
 def bit(address):
     value = cpu.ram.read_8(address)
@@ -772,27 +774,27 @@ def bit(address):
 def bmi(address):
     print(f'BMI Instruction {address}')
     if cpu.get_register('n') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bne(address):
     print(f'BNE Instruction {address}')
     if cpu.get_register('z') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bpl(address):
     print(f'BPL Instruction {address}')
     if cpu.get_register('n') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bvc(address):
     print(f'BVC Instruction {address}')
     if cpu.get_register('v') == 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def bvs(address):
     print(f'BVS Instruction {address}')
     if cpu.get_register('v') != 0:
-        blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
+        #blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
         cpu.branchcycles(address)
 def inx(_):
     print('INX Instruction')
@@ -831,19 +833,29 @@ def ldy(address):
     cpu.set_register('y', cpu.ram.read_8(address))
     cpu.set_register('z', cpu.get_register('y'))
     cpu.set_register('n', cpu.get_register('y'))
+def ldx(address):
+    print(f'LDX Instruction: {address}')
+    cpu.set_register('x', cpu.ram.read_8(address))
+    cpu.set_register('z', cpu.get_register('x'))
+    cpu.set_register('n', cpu.get_register('x'))
 def sta(address):
+    '''
     print(f'STA Instruction {address}')
     register = cpu.get_register('a')
     cpu.ram.write_8(address, register)
-def jsr(address):
-    print(f'JSR Instruction {address}')
-    cpu.push(address - 1)
-def rti(address):
+    '''
+    ...
+def stx(address):
+    print(f'STX Instruction {address}')
+    register = cpu.get_register('x')
+    cpu.ram.write_8(address, register)
+def rts(*args, **kwargs):
     pass
-def nop(address):
+def nop(*args, **kwargs):
     pass
-def rts(address):
-    print(f'RTS Instruction {address}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, cpu.pull_16(), 1, blazelib.libemu.current_console)
+def rti(*args, **kwargs):
+    pass
+def jsr(*args, **kwargs):
+    pass
 def stub(*args, **kwargs):
     pass

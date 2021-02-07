@@ -54,7 +54,6 @@ def exec_rom(file, bytes_per_instruction, console):
     current_rom = file
     current_console = console
     with open(file, 'rb') as file:
-        current_file = file
         spec = importlib.util.spec_from_file_location("console", f"{console[3]}/{console[0]}")
         console_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(console_module)
@@ -72,7 +71,7 @@ def exec_rom(file, bytes_per_instruction, console):
             # All done loading data! Now we can call upon our "trusty" partner... RegEx!
             
             
-            
+            something_was_done = False
             # just kidding i hate regex
             # I just realized we now have to compile every statement in the spec file! *super mario 64 slide music plays*
             # yeeeeeah, probably should've done that beforehand somehow
@@ -84,7 +83,7 @@ def exec_rom(file, bytes_per_instruction, console):
                 else:
                     do_pass_instruction = False
                 if statement.match(data):
-                    print(data)
+                    something_was_done = True
                     if 'argument_handler' in list(spec.keys()):
                         if 'arg_handler_kwargs' in list(i.keys()):
                             arguments = getattr(console_module, spec['argument_handler'])(hexlify(file.read(number_of_arguments)), **i['arg_handler_kwargs'])
@@ -101,13 +100,13 @@ def exec_rom(file, bytes_per_instruction, console):
                             
                     else:
                         if do_pass_instruction:
-                            getattr(console_module, list(i.values())[0])(arguments, data) #
+                            getattr(console_module, list(i.values())[0])(arguments, data + str(arguments)[2:-1]) #
                         else:
                             getattr(console_module, list(i.values())[0])(arguments)
-                            
+            if not something_was_done:
+                print(f'Unimplemented Instruction {data}')
             data = file.read(bytes_per_instruction)
             current_addr += bytes_per_instruction
-            print(current_addr)
 
     
         
