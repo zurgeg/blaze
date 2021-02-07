@@ -8,8 +8,8 @@ jobs:
       - run: "build/build.bat"
       - uses: actions/upload-artifact@v2
         with:
-          name: Blaze_Cli
-          path: bin/
+          name: Blaze Windows
+          path: bin/win.zip
   build_linux:
     runs-on: ubuntu-latest
     name: Build For Linux
@@ -19,15 +19,5 @@ jobs:
       - run: sh ./build/build.sh
       - uses: actions/upload-artifact@v2
         with:
-          name: Blaze_Cli
-          path: bin/
-    
-  upload:
-    needs: [build_win, build_linux]
-    runs-on: windows-2019
-    name: Upload Artifact
-    steps:
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Blaze_Cli
-          path: bin/
+          name: Blaze Linux
+          path: bin/linux.zip
