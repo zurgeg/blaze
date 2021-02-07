@@ -11,6 +11,7 @@ jobs:
     name: Build For Linux
     steps:
       - uses: actions/checkout@v2 
+      - run: chmod +X build/build.sh
       - run: ./build/build.sh
     
   upload:
