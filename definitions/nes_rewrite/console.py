@@ -833,6 +833,11 @@ def ldy(address):
     cpu.set_register('y', cpu.ram.read_8(address))
     cpu.set_register('z', cpu.get_register('y'))
     cpu.set_register('n', cpu.get_register('y'))
+def ldx(address):
+    print(f'LDX Instruction: {address}')
+    cpu.set_register('x', cpu.ram.read_8(address))
+    cpu.set_register('z', cpu.get_register('x'))
+    cpu.set_register('n', cpu.get_register('x'))
 def sta(address):
     '''
     print(f'STA Instruction {address}')
@@ -844,6 +849,13 @@ def stx(address):
     print(f'STX Instruction {address}')
     register = cpu.get_register('x')
     cpu.ram.write_8(address, register)
-   
+def rts(*args, **kwargs):
+    pass
+def nop(*args, **kwargs):
+    pass
+def rti(*args, **kwargs):
+    pass
+def jsr(*args, **kwargs):
+    pass
 def stub(*args, **kwargs):
     pass
