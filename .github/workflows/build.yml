@@ -10,6 +10,10 @@ jobs:
         with:
           name: Blaze Windows
           path: bin/windows_nightly.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Definitions
+          path: definitions/
   build_linux:
     runs-on: ubuntu-latest
     name: Build For Linux
