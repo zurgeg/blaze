@@ -1,9 +1,8 @@
-from pygame import draw as pdraw
-from pygame import Surface
-import pygame.display
 import blazelib.libemu
+import blazelib.lib2d as l2d
 size = (320, 160)
-screen = pygame.display.set_mode(size)      
+screen = l2d.Display((64, 32), size)
+clock = l2d.Clock()
 class CPU:
     def __init__(self):
         self.ram = [0] * 0x1FF
@@ -20,20 +19,28 @@ class CPU:
         elif address >= 0x200:
             return self.rom[address - 0x200]
 cpu = CPU()    
+def clear_screen():
+    clock.tick(60)
+def return_from_subroutine():
+    ...
 def exec_subroutine(arguments, instruction):
     if arguments == 'e0':
         clear_screen()
     address = int(instruction, base=16) & 0x0FFF
     print(f'Clear Screen')
 def jump_to(arguments, instruction):
-    address = int(instruction[1:3], base=16)
+    clock.tick(60)
+    address = (int(instruction, base=16) & 0x0FFF) - 0x202
+    print(address)
+    blazelib.libemu.current_addr = address
     print(f'Jump {address}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
 def set_register(arguments, instruction):
+    clock.tick(60)
     print(f'Set Register V{instruction[1]}')
     index = int(instruction[1], base=16) & 0x0F00
     cpu.x[index] = int(arguments, base=16)
 def add_to_register(arguments, instruction):
+    clock.tick(60)
     print(f'Set Register V{instruction[1]}')
     index = int(instruction[1], base=16) & 0x0F00
     cpu.x[index] += int(arguments, base=16)
@@ -94,14 +101,11 @@ def carries(number1, number2):
         i-=1
     return carries != 0
 def xor(a, b):
+    clock.tick(60)
     return (a and not b) or (not a and b)
 def draw(xpos, ypos, color):
-    x_base = xpos * 5
-    y_base = ypos * 5
-    pdraw.rect(screen,
-              (color, color, color),
-              (x_base, y_base, 5, 5))
-    pygame.display.flip()
+    clock.tick(240)
+    screen.draw_pixel(xpos, ypos, color)
     #cpu.screen_array[ypos][xpos] = color
 def set_i(args, instruction):
     print('Set I')
@@ -162,15 +166,13 @@ def instruction_8(args, instruction):
     else:
         print(f'Unknown 8 instruction {final_arg_byte}')
 def jump_with_v0(args, instruction):
-    addr = int(instruction, base=16) & 0x0FFF
+    addr = int(instruction[1:3], base=16)
     addr += cpu.x[0]
+    blazelib.libemu.current_addr = addr
     print(f'Jump {addr}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, addr, 1, blazelib.libemu.current_console)
 def random_number(args, instruction):
     pass
 def instruction_f(args, instruction):
     pass
         
     
-        
-        
