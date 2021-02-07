@@ -20,10 +20,6 @@ class CPU:
         elif address >= 0x200:
             return self.rom[address - 0x200]
 cpu = CPU()    
-def clear_screen():
-    ...
-def return_from_subroutine():
-    ...
 def exec_subroutine(arguments, instruction):
     if arguments == 'e0':
         clear_screen()
@@ -176,3 +172,5 @@ def instruction_f(args, instruction):
     pass
         
     
+        
+        
