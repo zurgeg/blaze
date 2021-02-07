@@ -1,9 +1,18 @@
-steps:
-- uses: actions/checkout@v2
+on: push
+jobs:
+  build:
+   runs-on: windows-2019
+   steps:
+     - shell: cmd
+     - name: Build
+     - uses: actions/checkout@v2
 
-- run: ./build/build.sh
-
-- uses: actions/upload-artifact@v2
-  with:
-    name: Blaze_Cli
-    path: bin/blaze_cli
+     - run: ./build/build.sh
+  upload:
+    runs-on: windows-2019
+    steps:
+      - name: Upload Artifact
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Blaze_Cli
+          path: bin/blaze_cli
