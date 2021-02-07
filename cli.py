@@ -1,6 +1,7 @@
 import sys
 import blazelib.libemu, blazelib.core
 import os.path
+ec = False
 if sys.argv[1] == '--help' or sys.argv[1] == '-h':
     print('--Blaze v0.2-Alpha--')
     print('python cli.py OR blaze_cli [ROM or -h/--help] [Console Folder]')
@@ -17,8 +18,15 @@ else:
         exit(1)
       else:
         console = blazelib.core.load_console(folder=blazelib.core.BASE_DIR + sys.argv[2], name="BlazeLib CLI Virtual Console")
-        blazelib.libemu.exec_rom(sys.argv[1], 2, console)
+        if ec:
+            try:
+                blazelib.libemu.exec_rom(sys.argv[1], 1, console)
+            except Exception as e:
+                print(f'[CLI] [FATAL] Emulator crashed: {e}')
+                exit(2)
+        else:
+            blazelib.libemu.exec_rom(sys.argv[1], 1, console)
         exit(0)
     
     
-    
+

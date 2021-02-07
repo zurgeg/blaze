@@ -12,3 +12,7 @@ __pycache__
 *.build
 cli_notportable.py
 *.pyc
+*.blazesave
+*.deb
+*.cdl
+*.ch8
