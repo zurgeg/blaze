@@ -1,0 +1,9 @@
+steps:
+- uses: actions/checkout@v2
+
+- run: ./build/build.sh
+
+- uses: actions/upload-artifact@v2
+  with:
+    name: Blaze_Cli
+    path: bin/blaze_cli
