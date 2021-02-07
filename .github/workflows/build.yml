@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2 
       - run: chmod +X build/build.sh
-      - run: ./build/build.sh
+      - run: sh ./build/build.sh
     
   upload:
     needs: [build_win, build_linux]
