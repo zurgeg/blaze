@@ -1,3 +1,5 @@
 mkdir bin
 pip install nuitka
-nuitka --standalone cli.py --output-dir bin -o blaze_cli.exe
+nuitka --standalone cli.py -o blaze_cli.exe
+move cli.dist/* bin
+
