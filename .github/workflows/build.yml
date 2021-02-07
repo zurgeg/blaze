@@ -9,7 +9,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Blaze Windows
-          path: bin/windows_nightly.zip
+          path: cli.dist/
       - uses: actions/upload-artifact@v2
         with:
           name: Definitions
@@ -24,4 +24,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Blaze Linux
-          path: bin/linux_nightly.zip
+          path: cli.dist/
