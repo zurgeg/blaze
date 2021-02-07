@@ -4,7 +4,6 @@ jobs:
    runs-on: windows-2019
    steps:
      - uses: actions/checkout@v2
-     - shell: cmd
      - name: Build
      - run: "build/build.bat"
   build_linux:
