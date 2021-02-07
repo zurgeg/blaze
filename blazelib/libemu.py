@@ -37,6 +37,10 @@ def read_and_exec(file, offset, n_bytes, console):
             number_of_arguments = i['args']
             if statement.match(data):
                 print(data)
+                if 'pass_instruction' in list(spec.keys()):
+                    do_pass_instruction = spec['pass_instruction']
+                else:
+                    do_pass_instruction = False
                 if 'argument_handler' in list(spec.keys()):
                     if 'arg_handler_kwargs' in list(i.keys()):
                         arguments = getattr(console_module, spec['argument_handler'])(hexlify(file.read(number_of_arguments)), **i['arg_handler_kwargs'])
@@ -45,10 +49,17 @@ def read_and_exec(file, offset, n_bytes, console):
                 else:
                     arguments = hexlify(file.read(number_of_arguments))
                         
-                if "kwargs" in list(i.keys()):   
-                    getattr(console_module, list(i.values())[0])(arguments, **i['kwargs']) # note: this line is spaghetti, please fix thx
+                if "kwargs" in list(i.keys()):
+                    if do_pass_instruction:
+                        getattr(console_module, list(i.values())[0])(arguments, data, **i['kwargs']) # note: this line is spaghetti, please fix thx
+                    else:
+                        getattr(console_module, list(i.values())[0])(arguments, **i['kwargs']) # note: this line is spaghetti, please fix thx
+                        
                 else:
-                    getattr(console_module, list(i.values())[0])(arguments) # 
+                    if do_pass_instruction:
+                        getattr(console_module, list(i.values())[0])(arguments, data + str(arguments)[2:-1]) #
+                    else:
+                        getattr(console_module, list(i.values())[0])(arguments) 
 def exec_rom(file, bytes_per_instruction, console):
     global current_rom, current_console, current_addr, extra_seek, current_file
     current_rom = file
