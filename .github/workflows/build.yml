@@ -14,6 +14,7 @@ jobs:
       - run: ./build/build.sh
     
   upload:
+    needs: [build_win, build_linux]
     runs-on: windows-2019
     name: Upload Artifact
     steps:
