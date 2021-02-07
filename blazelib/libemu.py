@@ -111,18 +111,11 @@ def exec_rom(file, bytes_per_instruction, console):
                             
                     else:
                         if do_pass_instruction:
-
                             getattr(console_module, list(i.values())[0])(arguments, data + str(arguments)[2:-1]) #
                         else:
                             getattr(console_module, list(i.values())[0])(arguments)
             if not something_was_done:
                 print(f'Unimplemented Instruction {data}')
-
-                            getattr(console_module, list(i.values())[0])(arguments, data) #
-                        else:
-                            getattr(console_module, list(i.values())[0])(arguments)
-                            
-
             data = file.read(bytes_per_instruction)
             current_addr += bytes_per_instruction
 
