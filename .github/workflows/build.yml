@@ -2,22 +2,22 @@ on: push
 jobs:
   build_win:
    runs-on: windows-2019
+   name: Build for Windows
    steps:
-     - uses: actions/checkout@v2
-     - name: Build
-     - run: "build/build.bat"
-  build_linux:
-    runs-on: ubuntu
-    steps:
       - uses: actions/checkout@v2
-      - name: Build For Linux
+      - run: "build/build.bat"
+  build_linux:
+    runs-on: ubuntu-latest
+    name: Build For Linux
+    steps:
+      - uses: actions/checkout@v2 
       - run: ./build/build.sh
     
   upload:
     runs-on: windows-2019
+    name: Upload Artifact
     steps:
       - uses: actions/upload-artifact@v2
-      - name: Upload Artifact
         with:
           name: Blaze_Cli
           path: bin/
