@@ -127,7 +127,3 @@ def exec_rom(file, bytes_per_instruction, console):
                 print('Skipping this instruction')
                 run_next_instruction = True
                 data = file.read(bytes_per_instruction)
-
-    
-        
-        
