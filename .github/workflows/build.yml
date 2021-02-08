@@ -12,6 +12,10 @@ jobs:
           path: cli.dist/
       - uses: actions/upload-artifact@v2
         with:
+          name: Blaze Windows (GUI)
+          path: gui.dist/  
+      - uses: actions/upload-artifact@v2
+        with:
           name: Definitions
           path: definitions/
   build_linux:
@@ -25,3 +29,7 @@ jobs:
         with:
           name: Blaze Linux
           path: cli.dist/
+      - uses: actions/upload-artifact@v2  
+        with:
+          name: Blaze Linux (GUI)
+          path: gui.dist/
