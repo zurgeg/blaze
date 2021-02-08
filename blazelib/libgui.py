@@ -1,7 +1,7 @@
 # Allows GUIs in a platform/module independent way
 TK = 0
 DEARPYGUI = 1
-BACKEND = TK
+BACKEND = DEARPYGUI
 if BACKEND == TK:
     from tkinter import *
 elif BACKEND == DEARPYGUI:
@@ -9,6 +9,7 @@ elif BACKEND == DEARPYGUI:
     from dearpygui.core import *
 if BACKEND == TK:
     is_menubar_current_container = False
+    print('WARNING: Tkinter backend is deprecated.')
     def make_window(title):
         window = Tk()
         window.title(title)
@@ -62,7 +63,9 @@ elif BACKEND == DEARPYGUI:
     def make_text(text, window):
         add_text(text)
     def start(window):
-        start_dearpygui()
+        show_logger()
+        set_log_level(mvTRACE)
+        start_dearpygui(primary_window=window)
     def end_container():
         end()
     def delete(item):

@@ -23,9 +23,21 @@ def clear_screen():
     clock.tick(60)
 def return_from_subroutine():
     ...
+def skip_if_nn(arguments, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    nn = int(instruction[2:3], 16)
+    if x == nn:
+        blazelib.libemu.current_addr += 0x2
+def skip_ifnot_nn(arguments, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    nn = int(instruction[2:3], 16)
+    if x != nn:
+        blazelib.libemu.current_addr += 0x2
 def exec_subroutine(arguments, instruction):
     if arguments == 'e0':
         clear_screen()
+    elif arguments == 'ee':
+        return_from_subroutine()
     address = int(instruction, base=16) & 0x0FFF
     print(f'Clear Screen')
 def jump_to(arguments, instruction):
@@ -51,8 +63,9 @@ def draw_chip8(arguments, instruction):
     print('Y ' + str((int(instruction, base=16) & 0x00F0) - 1))
     y_pos = cpu.x[(int(instruction, base=16) & 0x00F0) - 1]
     '''
-    x_pos = cpu.x[int(instruction[1], 16)]
-    y_pos = cpu.x[int(instruction[2], 16)]
+    f = open('spritedump.txt', 'a')
+    x_pos = cpu.x[int(instruction[1], 16)] % 64
+    y_pos = cpu.x[int(instruction[2], 16)] % 32
     print(f'Draw {x_pos}, {y_pos}')
     x = 0
     y = 0
@@ -62,6 +75,7 @@ def draw_chip8(arguments, instruction):
     for y in range(height):
         print(f'Sprite data is at {cpu.i + y}')
         sprite_data = bin(cpu.read(cpu.i + y))
+        f.write(str(sprite_data)[2:])
         sprite_data = sprite_data[2:].zfill(8)
         y_coord = y_pos + y
         print(f'Sprite Data {cpu.i}')
@@ -74,6 +88,8 @@ def draw_chip8(arguments, instruction):
             else:
                 data = 0
             draw(x_coord, y_coord, data)
+        f.write('\n')
+    f.close()
 def carries(number1, number2):
     num1 = str(number1)
     num2 = str(number2)
@@ -104,7 +120,7 @@ def xor(a, b):
     clock.tick(60)
     return (a and not b) or (not a and b)
 def draw(xpos, ypos, color):
-    clock.tick(240)
+    clock.tick(60)
     screen.draw_pixel(xpos, ypos, color)
     #cpu.screen_array[ypos][xpos] = color
 def set_i(args, instruction):
@@ -172,7 +188,27 @@ def jump_with_v0(args, instruction):
     print(f'Jump {addr}')
 def random_number(args, instruction):
     pass
-def instruction_f(args, instruction):
+def add_x_to_i(args, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    cpu.i += x
+def set_i_to_x(args, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    cpu.i = x
+def fx55(args, instruction):
     pass
+def instruction_f(args, instruction):
+    last_byte = str(args)[2:-1][1]
+    third_byte = instruction[2]
+    final_arg_byte = int(third_byte + last_byte, 16)
+    if final_arg_byte == 0x1e:
+        add_x_to_i(args, instruction)
+    elif final_arg_byte == 0x29:
+        set_i_to_x(args, instruction)
+    elif final_arg_byte == 0x55:
+        fx55(args, instruction)
+    
+        
+    
+    
         
     

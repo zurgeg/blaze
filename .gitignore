@@ -16,3 +16,4 @@ cli_notportable.py
 *.deb
 *.cdl
 *.ch8
+spritedump.txt
