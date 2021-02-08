@@ -1,0 +1,27 @@
+on: push
+jobs:
+  build_win:
+   runs-on: windows-2019
+   name: Build for Windows
+   steps:
+      - uses: actions/checkout@v2
+      - run: "build/build.bat"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Blaze Windows
+          path: cli.dist/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Definitions
+          path: definitions/
+  build_linux:
+    runs-on: ubuntu-latest
+    name: Build For Linux
+    steps:
+      - uses: actions/checkout@v2 
+      - run: chmod +X build/build.sh
+      - run: sh ./build/build.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Blaze Linux
+          path: cli.dist/

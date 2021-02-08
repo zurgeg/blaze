@@ -1,9 +1,8 @@
-from pygame import draw as pdraw
-from pygame import Surface
-import pygame.display
 import blazelib.libemu
+import blazelib.lib2d as l2d
 size = (320, 160)
-screen = pygame.display.set_mode(size)      
+screen = l2d.Display((64, 32), size)
+clock = l2d.Clock()
 class CPU:
     def __init__(self):
         self.ram = [0] * 0x1FF
@@ -20,20 +19,40 @@ class CPU:
         elif address >= 0x200:
             return self.rom[address - 0x200]
 cpu = CPU()    
+def clear_screen():
+    clock.tick(60)
+def return_from_subroutine():
+    ...
+def skip_if_nn(arguments, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    nn = int(instruction[2:3], 16)
+    if x == nn:
+        blazelib.libemu.current_addr += 0x2
+def skip_ifnot_nn(arguments, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    nn = int(instruction[2:3], 16)
+    if x != nn:
+        blazelib.libemu.current_addr += 0x2
 def exec_subroutine(arguments, instruction):
     if arguments == 'e0':
         clear_screen()
+    elif arguments == 'ee':
+        return_from_subroutine()
     address = int(instruction, base=16) & 0x0FFF
     print(f'Clear Screen')
 def jump_to(arguments, instruction):
-    address = int(instruction[1:3], base=16)
+    clock.tick(60)
+    address = (int(instruction, base=16) & 0x0FFF) - 0x202
+    print(address)
+    blazelib.libemu.current_addr = address
     print(f'Jump {address}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, address, 1, blazelib.libemu.current_console)
 def set_register(arguments, instruction):
+    clock.tick(60)
     print(f'Set Register V{instruction[1]}')
     index = int(instruction[1], base=16) & 0x0F00
     cpu.x[index] = int(arguments, base=16)
 def add_to_register(arguments, instruction):
+    clock.tick(60)
     print(f'Set Register V{instruction[1]}')
     index = int(instruction[1], base=16) & 0x0F00
     cpu.x[index] += int(arguments, base=16)
@@ -44,8 +63,9 @@ def draw_chip8(arguments, instruction):
     print('Y ' + str((int(instruction, base=16) & 0x00F0) - 1))
     y_pos = cpu.x[(int(instruction, base=16) & 0x00F0) - 1]
     '''
-    x_pos = cpu.x[int(instruction[1], 16)]
-    y_pos = cpu.x[int(instruction[2], 16)]
+    f = open('spritedump.txt', 'a')
+    x_pos = cpu.x[int(instruction[1], 16)] % 64
+    y_pos = cpu.x[int(instruction[2], 16)] % 32
     print(f'Draw {x_pos}, {y_pos}')
     x = 0
     y = 0
@@ -55,6 +75,7 @@ def draw_chip8(arguments, instruction):
     for y in range(height):
         print(f'Sprite data is at {cpu.i + y}')
         sprite_data = bin(cpu.read(cpu.i + y))
+        f.write(str(sprite_data)[2:])
         sprite_data = sprite_data[2:].zfill(8)
         y_coord = y_pos + y
         print(f'Sprite Data {cpu.i}')
@@ -67,6 +88,8 @@ def draw_chip8(arguments, instruction):
             else:
                 data = 0
             draw(x_coord, y_coord, data)
+        f.write('\n')
+    f.close()
 def carries(number1, number2):
     num1 = str(number1)
     num2 = str(number2)
@@ -94,14 +117,11 @@ def carries(number1, number2):
         i-=1
     return carries != 0
 def xor(a, b):
+    clock.tick(60)
     return (a and not b) or (not a and b)
 def draw(xpos, ypos, color):
-    x_base = xpos * 5
-    y_base = ypos * 5
-    pdraw.rect(screen,
-              (color, color, color),
-              (x_base, y_base, 5, 5))
-    pygame.display.flip()
+    clock.tick(60)
+    screen.draw_pixel(xpos, ypos, color)
     #cpu.screen_array[ypos][xpos] = color
 def set_i(args, instruction):
     print('Set I')
@@ -162,15 +182,33 @@ def instruction_8(args, instruction):
     else:
         print(f'Unknown 8 instruction {final_arg_byte}')
 def jump_with_v0(args, instruction):
-    addr = int(instruction, base=16) & 0x0FFF
+    addr = int(instruction[1:3], base=16)
     addr += cpu.x[0]
+    blazelib.libemu.current_addr = addr
     print(f'Jump {addr}')
-    blazelib.libemu.read_and_exec(blazelib.libemu.current_rom, addr, 1, blazelib.libemu.current_console)
 def random_number(args, instruction):
     pass
-def instruction_f(args, instruction):
+def add_x_to_i(args, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    cpu.i += x
+def set_i_to_x(args, instruction):
+    x = cpu.x[int(instruction[1], 16)]
+    cpu.i = x
+def fx55(args, instruction):
     pass
-        
+def instruction_f(args, instruction):
+    last_byte = str(args)[2:-1][1]
+    third_byte = instruction[2]
+    final_arg_byte = int(third_byte + last_byte, 16)
+    if final_arg_byte == 0x1e:
+        add_x_to_i(args, instruction)
+    elif final_arg_byte == 0x29:
+        set_i_to_x(args, instruction)
+    elif final_arg_byte == 0x55:
+        fx55(args, instruction)
     
         
+    
+    
         
+    
