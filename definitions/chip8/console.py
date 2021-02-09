@@ -39,12 +39,12 @@ def clear_screen():
     clock.tick(60)
 def return_from_subroutine():
     addr = cpu.pop()
-    print(addr)
+    print(f'Returning to {addr}')
     blazelib.libemu.current_addr = addr
 def jump_to_sub(args, instruction):
     cpu.push(blazelib.libemu.current_addr)
-    print(int(instruction, base=16) & 0x0FFF)
-    blazelib.libemu.current_addr = (int(instruction, base=16) & 0x0FFF) - 0x200
+    print(int(instruction[1:3], base=16))
+    blazelib.libemu.current_addr = int(instruction[1:3], base=16)
 def skip_if_nn(arguments, instruction):
     x = cpu.x[int(instruction[1], 16)]
     nn = int(instruction[2:3], 16)
