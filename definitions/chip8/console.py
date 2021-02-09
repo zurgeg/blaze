@@ -7,7 +7,7 @@ class CPU:
     def __init__(self):
         self.ram = [0] * 0x1FF
         self.rom = open(blazelib.libemu.current_rom, 'rb').read()
-        self.stack = []
+        self.sp = 0x52
         self.delay_timer = 60
         self.sound_timer = 60
         self.x = [0] * 0x10
@@ -18,11 +18,33 @@ class CPU:
             return self.ram[address]
         elif address >= 0x200:
             return self.rom[address - 0x200]
+    def write(self, address, value):
+        if address <= 0x1FF:
+            self.ram[address] = value
+        elif address >= 0x200:
+            self.rom[address - 0x200] = value
+    def pop(self):
+        self.sp -= 1
+        return self.read(self.sp)
+    def push(self, value):
+        self.write(self.sp, value)
+        self.sp += 1
+    def read_pc(self):
+        return self.read(blazelib.libemu.current_addr + 0x200)
+    def get_pc(self):
+        return blazelib.libemu.current_addr + 0x200
+
 cpu = CPU()    
 def clear_screen():
     clock.tick(60)
 def return_from_subroutine():
-    ...
+    addr = cpu.pop()
+    print(addr)
+    blazelib.libemu.current_addr = addr
+def jump_to_sub(args, instruction):
+    cpu.push(blazelib.libemu.current_addr)
+    print(int(instruction, base=16) & 0x0FFF)
+    blazelib.libemu.current_addr = (int(instruction, base=16) & 0x0FFF) - 0x200
 def skip_if_nn(arguments, instruction):
     x = cpu.x[int(instruction[1], 16)]
     nn = int(instruction[2:3], 16)
@@ -63,7 +85,7 @@ def draw_chip8(arguments, instruction):
     print('Y ' + str((int(instruction, base=16) & 0x00F0) - 1))
     y_pos = cpu.x[(int(instruction, base=16) & 0x00F0) - 1]
     '''
-    f = open('spritedump.txt', 'a')
+    #f = open('spritedump.txt', 'a')
     x_pos = cpu.x[int(instruction[1], 16)] % 64
     y_pos = cpu.x[int(instruction[2], 16)] % 32
     print(f'Draw {x_pos}, {y_pos}')
@@ -75,7 +97,7 @@ def draw_chip8(arguments, instruction):
     for y in range(height):
         print(f'Sprite data is at {cpu.i + y}')
         sprite_data = bin(cpu.read(cpu.i + y))
-        f.write(str(sprite_data)[2:])
+        #f.write(str(sprite_data)[2:])
         sprite_data = sprite_data[2:].zfill(8)
         y_coord = y_pos + y
         print(f'Sprite Data {cpu.i}')
@@ -88,8 +110,8 @@ def draw_chip8(arguments, instruction):
             else:
                 data = 0
             draw(x_coord, y_coord, data)
-        f.write('\n')
-    f.close()
+        #f.write('\n')
+    #f.close()
 def carries(number1, number2):
     num1 = str(number1)
     num2 = str(number2)
@@ -110,7 +132,7 @@ def carries(number1, number2):
     i = c1
     while (i > 0):
         if (int(num1[i-1])+int(num2[i-1])+carry > 9):
-            carry = 1;
+            carry = 1
             carries+=1
         else:
             carry = 0

@@ -14,8 +14,6 @@ class Display:
         self.window = add_window("Emulation", width=window_size[0], height=window_size[1])
         self.scale_factor = window_size[0] / native_display_size[0]
         print(f'Scale Factor {self.scale_factor}')
-        self.dpgthread = Thread(target=lambda: start_dearpygui(primary_window="Emulation"))
-        self.dpgthread.start()
         add_drawing('drawing##widget', width=window_size[0], height=window_size[1])
     def draw_pixel(self, x, y, color):
         if isinstance(color, int):

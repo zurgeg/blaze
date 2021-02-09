@@ -66,6 +66,8 @@ elif BACKEND == DEARPYGUI:
         show_logger()
         set_log_level(mvTRACE)
         start_dearpygui(primary_window=window)
+    def file_selector(window, callback):
+        open_file_dialog(callback=callback, extensions=".*")
     def end_container():
         end()
     def delete(item):

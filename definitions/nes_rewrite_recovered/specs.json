@@ -4,7 +4,7 @@
     "header_size":16,
     "header_handler":"header_handler",
     "ram_read":"debugger_ram_read",
-    "register_read":"debugger_register_read"
+    "register_read":"debugger_register_read",
     "patterns":[
         {"00":"notbreak", "args":1},
         {"4c":"jump_to", "args":2},
