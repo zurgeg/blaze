@@ -71,12 +71,12 @@ def jump_to(arguments, instruction):
 def set_register(arguments, instruction):
     clock.tick(60)
     print(f'Set Register V{instruction[1]}')
-    index = int(instruction[1], base=16) & 0x0F00
+    index = int(instruction[1], base=16)
     cpu.x[index] = int(arguments, base=16)
 def add_to_register(arguments, instruction):
     clock.tick(60)
     print(f'Set Register V{instruction[1]}')
-    index = int(instruction[1], base=16) & 0x0F00
+    index = int(instruction[1], base=16)
     cpu.x[index] += int(arguments, base=16)
 def draw_chip8(arguments, instruction):
     '''
