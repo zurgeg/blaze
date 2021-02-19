@@ -29,10 +29,13 @@ class Clock:
     def __init__(self):
         self.time = time()
     def tick(self, framerate):
-        tick = 1/framerate + time()
-        t = time()
-        while t != tick:
-            tick = t
+        dt = get_delta_time()
+        max_delta_time = framerate / 2
+        max_delta_time = max_delta_time / 100
+        if dt <= 0.03:
+            # Running at greater then 60FPS
+            sleep(0.03 - dt)
+        
 '''
 # --Backend PyGame--
 from pygame import display, draw, HWSURFACE, DOUBLEBUF, event
