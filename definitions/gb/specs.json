@@ -2,10 +2,27 @@
     "import":"console.py",
     "argument_handler":"arg_handler",
     "header_size":16,
+    "pass_instruction":true,
     "header_handler":"header_handler",
     "ram_read":"debugger_ram_read",
     "register_read":"debugger_register_read",
     "patterns":[
-        {"00":"nop", "args":1},
+        {"00":"nop", "args":0},
+        {"01":"ldbc", "args":2},
+        {"02":"ldbca","args":0},
+        {"03":"incbc","args":0},
+        {"04":"incb","args":0},
+        {"05":"decb","args":0},
+        {"06":"ldb","args":1},
+        {"07":"rlca","args":0},
+        {"08":"ld", "args":2},
+        {"09":"addhl", "args":0},
+        {"0a":"lda","args":0},
+        {"0b":"decbc","args":0},
+        {"0c":"incc","args":0},
+        {"0d":"decc","args":0},
+        {"0e":"ldc","args":1},
+        {"0f":"rrca", "args":1}
+
     ]
 }
