@@ -62,7 +62,10 @@ def load_console(folder=BASE_DIR + "Generic", file_format="rom", name="Blaze Gen
                   print("[CORE] [INFO] Console OK!!")
                   current_system_dir = folder
                   current_system_icon = "Icons/generic.ico"
-                  return [specs['import'], specs, manifest, folder, file_format, name, icon_url] # This holds console info, it's formatted like so. [functions_file, specs_dict, manifest_dict, folder, file_format, name, icon, icon_url]
+                  if "mode" in list(specs.keys()):
+                      if "mode" == 'lowlevel':
+                          return [specs['import'], specs, manifest, folder, file_format, name, icon_url, True]
+                  return [specs['import'], specs, manifest, folder, file_format, name, icon_url, False] # This holds console info, it's formatted like so. [functions_file, specs_dict, manifest_dict, folder, file_format, name, icon, icon_url]
              
           
     

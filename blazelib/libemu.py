@@ -88,7 +88,9 @@ def exec_rom(file, bytes_per_instruction, console):
             # just kidding i hate regex
             # I just realized we now have to compile every statement in the spec file! *super mario 64 slide music plays*
             # yeeeeeah, probably should've done that beforehand somehow
-            if run_next_instruction:
+            if console[7]:
+                getattr(console_module, 'run')(current_rom)
+            if not console[7]:
                 for i in spec['patterns']:
                     statement = re.compile(list(i.keys())[0])
                     number_of_arguments = i['args']
@@ -124,9 +126,8 @@ def exec_rom(file, bytes_per_instruction, console):
                 file.seek(current_addr)
                 data = file.read(bytes_per_instruction)
             else:
-                print('Skipping this instruction')
-                run_next_instruction = True
-                data = file.read(bytes_per_instruction)
+                #getattr(console_module, 'step')(data)
+
 def threadsafe_exec_rom(file, bytes_per_instruction, console, stop):
     global current_rom, current_console, current_addr, extra_seek, current_file, run_next_instruction
     current_rom = file
@@ -148,12 +149,13 @@ def threadsafe_exec_rom(file, bytes_per_instruction, console, stop):
             data = str(hexlify(data))[2:-1]
             # All done loading data! Now we can call upon our "trusty" partner... RegEx!
             
-            
+            if console[7]:
+                getattr(console_module, 'run')(current_rom)
             something_was_done = False
             # just kidding i hate regex
             # I just realized we now have to compile every statement in the spec file! *super mario 64 slide music plays*
             # yeeeeeah, probably should've done that beforehand somehow
-            if run_next_instruction:
+            if not console[7]:
                 for i in spec['patterns']:
                     statement = re.compile(list(i.keys())[0])
                     number_of_arguments = i['args']
@@ -189,6 +191,4 @@ def threadsafe_exec_rom(file, bytes_per_instruction, console, stop):
                 file.seek(current_addr)
                 data = file.read(bytes_per_instruction)
             else:
-                print('Skipping this instruction')
-                run_next_instruction = True
-                data = file.read(bytes_per_instruction)
+                ...
