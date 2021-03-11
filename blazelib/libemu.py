@@ -127,6 +127,7 @@ def exec_rom(file, bytes_per_instruction, console):
                 data = file.read(bytes_per_instruction)
             else:
                 #getattr(console_module, 'step')(data)
+                ...
 
 def threadsafe_exec_rom(file, bytes_per_instruction, console, stop):
     global current_rom, current_console, current_addr, extra_seek, current_file, run_next_instruction
