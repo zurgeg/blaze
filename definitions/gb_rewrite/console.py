@@ -14,7 +14,7 @@ import yaml
 import base64
 import blazelib.libemu
 from time import sleep
-def die(message, console):
+def die(console, message):
     cpu = console.cpu
     print('ERROR')
     print('The emulation has crashed')
@@ -22,7 +22,7 @@ def die(message, console):
     pc = blazelib.libemu.current_addr
     print(f'PC: {cpu.pc}')
     print(f'IE: {cpu.ie}')
-    state = base64.b64encode(console.dump())
+    state = base64.b64encode(zlib.compress(base64.b64encode(bytes(cpu.console.dump(), encoding='utf-8'))))
     print(f'STATE: {state}')
     print(f'Error: {message}')
     exit() # Who knows what this will do
